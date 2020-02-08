@@ -21,97 +21,71 @@ public class App {
    */
   public static String bestCharge(String selectedItems) {
     String[] selection = selectedItems.split(",");
-    String result = "";
+    StringBuilder result = new StringBuilder("============= 订餐明细 =============\n");
 
-    result += "============= 订餐明细 =============\n";
     for (String s : selection) {
-      String id = s.split(" ")[0];
-      int count = Integer.parseInt(s.split(" ")[2]);
-      result += getName(id) + " x " + count + " = " + (calculateEach(getPrice(id), count)) + "元\n";
+      String id = s.split(" x ")[0];
+      int count = Integer.parseInt(s.split(" x ")[1]);
+      result.append(String.format("%s x %d = %d元\n", getName(id), count, calculateEach(getPrice(id), count)));
     }
     int sum = calculateSum(selection);
     int firstSum = calculateFirstPromotion(sum);
     int secondSum = calculateSecondPromotion(selection);
-    if (firstSum != sum && secondSum != sum) {
-      result += "-----------------------------------\n" + "使用优惠:\n";
-      boolean promotionType = comparePromotion(firstSum, secondSum);
-      if (promotionType) {
-        result += "满30减6元，省" + calculateDiscount(sum, firstSum) + "元\n";
+    if (firstSum != sum || secondSum != sum) {
+      result.append("-----------------------------------\n").append("使用优惠:\n");
+      if (firstSum <= secondSum) {
+        result.append(String.format("满30减6元，省%d元\n", sum - firstSum));
         sum = firstSum;
       }
       else {
-        result += "指定菜品半价(" + getHalfPriceName(selection);
-        result += ")，省" + calculateDiscount(sum, secondSum) + "元\n";
+        result.append(String.format("指定菜品半价(%s)，省%d元\n", getHalfPriceName(selection), sum - secondSum));
         sum = secondSum;
       }
     }
-    result += "-----------------------------------\n";
-    result += "总计：" + sum + "元\n";
-    result += "===================================";
-    return result;
+    result.append("-----------------------------------\n").append(String.format("总计：%d元\n", sum)).append("===================================");
+    return result.toString();
   }
 
   public static String getName(String id) {
     String[] ids = getItemIds();
     String[] names = getItemNames();
-    String result = "";
 
     for (int i = 0; i < ids.length; i++) {
       if (ids[i].equals(id)) {
-        result = names[i];
+        return names[i];
       }
     }
-    return result;
+    return "";
   }
 
   public static double getPrice(String id) {
     String[] ids = getItemIds();
     double[] prices = getItemPrices();
-    double result = 0;
 
     for (int i = 0; i < ids.length; i++) {
       if (ids[i].equals(id)) {
-        result = prices[i];
+        return prices[i];
       }
     }
-    return result;
-  }
-
-  public static String getHalfPriceName(String[] selectedArray) {
-    List<String> halfItems = Arrays.asList(getHalfPriceIds());
-    String result = "";
-
-    for (String s : selectedArray) {
-      String id = s.split(" ")[0];
-      if (halfItems.contains(id)) {
-        result += getName(id) + "，";
-      }
-    }
-    return result.substring(0, result.length() - 1);
+    return 0;
   }
 
   public static int calculateEach(double price, double count) {
-    int i = (new Double(price * count)).intValue();
-    return i;
+    return new Double(price * count).intValue();
   }
 
   public static int calculateSum(String[] selectedArray) {
     int sum = 0;
     for (String s : selectedArray) {
-      String id = s.split(" ")[0];
-      double count = Double.parseDouble(s.split(" ")[2]);
+      String id = s.split(" x ")[0];
+      double count = Double.parseDouble(s.split(" x ")[1]);
       sum += calculateEach(getPrice(id), count);
     }
     return sum;
   }
 
   public static int calculateFirstPromotion(int sum) {
-    if (sum >= 30) {
-      return sum - 6;
-    }
-    else {
-      return sum;
-    }
+    return (sum >= 30) ? sum - 6 : sum;
   }
 
   public static int calculateSecondPromotion(String[] selectedArray) {
@@ -119,8 +93,8 @@ public class App {
     List<String> halfItems = Arrays.asList(getHalfPriceIds());
 
     for (int i = 0; i < newArray.length; i++) {
-      String id = newArray[i].split(" ")[0];
-      double count = Double.parseDouble(newArray[i].split(" ")[2]);
+      String id = newArray[i].split(" x ")[0];
+      double count = Double.parseDouble(newArray[i].split(" x ")[1]);
       if (halfItems.contains(id)) {
         newArray[i] = id + " x " + count / 2;
       }
@@ -128,15 +102,18 @@ public class App {
     return calculateSum(newArray);
   }
 
-  public static boolean comparePromotion(int promotionOne, int promotionTwo) {
-    return promotionOne <= promotionTwo;
+  public static String getHalfPriceName(String[] selectedArray) {
+    List<String> halfItems = Arrays.asList(getHalfPriceIds());
+    StringBuilder result = new StringBuilder();
+
+    for (String s : selectedArray) {
+      String id = s.split(" x ")[0];
+      if (halfItems.contains(id)) {
+        result.append(getName(id)).append("，");
+      }
+    }
+    return result.substring(0, result.length() - 1);
   }
-
-  public static int calculateDiscount(int sum, int finalSum) {
-    return sum - finalSum;
-  }
-
-
 
   /**
    * 获取每个菜品依次的编号
